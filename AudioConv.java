@@ -10,11 +10,13 @@ import java.util.regex.Pattern;
 public class AudioConv {
     private final double q;
     private final String path;
+    private final boolean removeOrig;
     private List<String> listFiles;
 
-    public AudioConv(double q, String path){
+    public AudioConv(double q, String path, boolean rf){
         this.q = q;
         this.path = path;
+        removeOrig = rf;
         listFiles = new ArrayList<>();
         System.out.println("Якість: " + this.q);
         Pattern formats = Pattern.compile("(mp3|ogg|aac|mp4|m4a|wma|opus|oga|flac|wav|aiff|webm|matroska|webm|matroska|asf|amr|avi|mov|3gp)$");
@@ -122,23 +124,39 @@ public class AudioConv {
                 System.out.println("neroAacTag Error");
                 return;
             }
+
+            if(removeOrig){
+                command.clear();
+                command.add("rm");
+                command.add("-f");
+                command.add(name);
+                process = new ProcessBuilder(command).start();
+                if(process.waitFor() != 0){
+                    System.out.println("remove orig Error");
+                    return;
+                }
+            }
         }
     }
 
     public static void main(String[] args) throws InterruptedException {
         int processors = Runtime.getRuntime().availableProcessors();
         double q = 0.75;
+        boolean removeFile = false;
         AudioConv audioConv;
         try{
-            for(int i = 0; i < args.length - 1; i++){
-                if(args[i].equals("-q")){
+            for(int i = 0; i < args.length; i++){
+                if(args[i].equals("-q") && args[i + 1] != null){
                     q = Double.parseDouble(args[i + 1]);
                 }
-                if(args[i].equals("-c")){
+                if(args[i].equals("-c") && args[i + 1] != null){
                     processors = Integer.parseInt(args[i + 1]);
                 }
+                if(args[i].equals("-r")){
+                    removeFile = true;
+                }
             }
-            audioConv = new AudioConv(q, new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec("pwd").getInputStream())).readLine());
+            audioConv = new AudioConv(q, new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec("pwd").getInputStream())).readLine(), removeFile);
         }catch(Exception e){
             System.out.println(e.getMessage());
             return;
