@@ -127,7 +127,7 @@ public class AudioConv {
 
     public static void main(String[] args) throws InterruptedException {
         int processors = Runtime.getRuntime().availableProcessors();
-        double q = 0.5;
+        double q = 0.75;
         AudioConv audioConv;
         try{
             for(int i = 0; i < args.length - 1; i++){
