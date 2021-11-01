@@ -11,6 +11,8 @@ public class AudioConv {
     private final double q;
     private final boolean removeOrig;
     private final List<String> listFiles;
+    private int n;
+    private int i = 0;
 
     private void removeFile(String file){
         try {
@@ -32,18 +34,22 @@ public class AudioConv {
                 listFiles.add(f.getName());
             }
         }
+        n = listFiles.size();
     }
 
     public void work() throws IOException, InterruptedException {
         while(true){
             String name;
+            String subName;
             synchronized (this){
                 if(!listFiles.isEmpty()){
                     name = listFiles.remove(0);
                 }else{
                     break;
                 }
-                System.out.println(name.substring(0, name.lastIndexOf(".")) + ".m4a");
+                subName = name.substring(0, name.lastIndexOf("."));
+                i += 1;
+                System.out.println((100 * i / n)  + "% (" + i + "/" + n + ") " + subName + ".m4a");
             }
             if(name.isEmpty()){
                 continue;
@@ -57,7 +63,6 @@ public class AudioConv {
             }else{
                 title = items[0];
             }
-            String subName = name.substring(0, name.lastIndexOf("."));
             String name2 = "." + subName + ".wav";
             String name4 = ".2" + subName + ".wav";
             String name3 = subName + ".m4a";
