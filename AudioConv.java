@@ -12,6 +12,15 @@ public class AudioConv {
     private final boolean removeOrig;
     private final List<String> listFiles;
 
+    private void removeFile(String file){
+        try {
+            Process process = new ProcessBuilder("rm", "-f", file).start();
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     public AudioConv(double q, String path, boolean rf){
         this.q = q;
         removeOrig = rf;
@@ -66,7 +75,8 @@ public class AudioConv {
             command.add(name2);
             Process process = new ProcessBuilder(command).start();
             if(process.waitFor() != 0){
-                System.out.println(name3 + " To wav Error");
+                System.out.println(name3 + " to wav Error");
+                removeFile(name2);
                 continue;
             }
 
@@ -88,6 +98,8 @@ public class AudioConv {
             process = new ProcessBuilder(command).start();
             if(process.waitFor() != 0){
                 System.out.println(name3 + " sox Error");
+                removeFile(name2);
+                removeFile(name4);
                 continue;
             }
 
@@ -98,6 +110,8 @@ public class AudioConv {
             process = new ProcessBuilder(command).start();
             if(process.waitFor() != 0){
                 System.out.println(name3 + " mv Error");
+                removeFile(name2);
+                removeFile(name4);
                 continue;
             }
 
@@ -118,7 +132,9 @@ public class AudioConv {
             command.add(name3);
             process = new ProcessBuilder(command).start();
             if(process.waitFor() != 0){
-                System.out.println(name3 + " To m4a Error");
+                System.out.println(name3 + " to m4a Error");
+                removeFile(name2);
+                removeFile(name3);
                 continue;
             }
 
@@ -128,6 +144,7 @@ public class AudioConv {
             process = new ProcessBuilder(command).start();
             if(process.waitFor() != 0){
                 System.out.println(name2 + " rm Error");
+                removeFile(name2);
                 continue;
             }
 
@@ -138,6 +155,7 @@ public class AudioConv {
             process = new ProcessBuilder(command).start();
             if(process.waitFor() != 0){
                 System.out.println(name3 + " aacgain Error");
+                removeFile(name3);
                 continue;
             }
 
@@ -151,6 +169,7 @@ public class AudioConv {
             process = new ProcessBuilder(command).start();
             if(process.waitFor() != 0){
                 System.out.println(name3 + " neroAacTag Error");
+                removeFile(name3);
                 continue;
             }
 
