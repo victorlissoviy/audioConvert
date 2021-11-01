@@ -9,18 +9,16 @@ import java.util.regex.Pattern;
 
 public class AudioConv {
     private final double q;
-    private final String path;
     private final boolean removeOrig;
-    private List<String> listFiles;
+    private final List<String> listFiles;
 
     public AudioConv(double q, String path, boolean rf){
         this.q = q;
-        this.path = path;
         removeOrig = rf;
         listFiles = new ArrayList<>();
         System.out.println("Якість: " + this.q);
-        Pattern formats = Pattern.compile("(mp3|ogg|aac|mp4|m4a|wma|opus|oga|flac|wav|aiff|webm|matroska|webm|matroska|asf|amr|avi|mov|3gp)$");
-        for(File f : Objects.requireNonNull(new File(this.path).listFiles())){
+        Pattern formats = Pattern.compile("(mp3|ogg|aac|mp4|m4a|wma|opus|oga|flac|wav|aiff|webm|matroska|asf|amr|avi|mov|3gp)$");
+        for(File f : Objects.requireNonNull(new File(path).listFiles())){
             if(formats.matcher(f.getName().toLowerCase()).find()){
                 listFiles.add(f.getName());
             }
@@ -29,7 +27,7 @@ public class AudioConv {
 
     public void work() throws IOException, InterruptedException {
         while(true){
-            String name = null;
+            String name;
             synchronized (this){
                 if(!listFiles.isEmpty()){
                     name = listFiles.remove(0);
@@ -50,9 +48,10 @@ public class AudioConv {
             }else{
                 title = items[0];
             }
-            items = null;
-            String name2 = "." + name.substring(0, name.lastIndexOf(".")) + ".wav";
-            String name3 = name.substring(0, name.lastIndexOf(".")) + ".m4a";
+            String subName = name.substring(0, name.lastIndexOf("."));
+            String name2 = "." + subName + ".wav";
+            String name4 = ".2" + subName + ".wav";
+            String name3 = subName + ".m4a";
             List<String> command = new ArrayList<>();
             command.add("ffmpeg");
             command.add("-y");
@@ -68,7 +67,38 @@ public class AudioConv {
             Process process = new ProcessBuilder(command).start();
             if(process.waitFor() != 0){
                 System.out.println(name3 + " To wav Error");
-                return;
+                continue;
+            }
+
+            command.clear();
+            command.add("sox");
+            command.add(name2);
+            command.add("-e");
+            command.add("floating-point");
+            command.add(name4);
+            command.add("rate");
+            command.add("-v");
+            command.add("-I");
+            command.add("-a");
+            command.add("-b");
+            command.add("99.7");
+            command.add("-p");
+            command.add("100");
+            command.add("48000");
+            process = new ProcessBuilder(command).start();
+            if(process.waitFor() != 0){
+                System.out.println(name3 + " sox Error");
+                continue;
+            }
+
+            command.clear();
+            command.add("mv");
+            command.add(name4);
+            command.add(name2);
+            process = new ProcessBuilder(command).start();
+            if(process.waitFor() != 0){
+                System.out.println(name3 + " mv Error");
+                continue;
             }
 
             command.clear();
@@ -89,7 +119,7 @@ public class AudioConv {
             process = new ProcessBuilder(command).start();
             if(process.waitFor() != 0){
                 System.out.println(name3 + " To m4a Error");
-                return;
+                continue;
             }
 
             command.clear();
@@ -98,7 +128,7 @@ public class AudioConv {
             process = new ProcessBuilder(command).start();
             if(process.waitFor() != 0){
                 System.out.println(name2 + " rm Error");
-                return;
+                continue;
             }
 
             command.clear();
@@ -108,7 +138,7 @@ public class AudioConv {
             process = new ProcessBuilder(command).start();
             if(process.waitFor() != 0){
                 System.out.println(name3 + " aacgain Error");
-                return;
+                continue;
             }
 
             command.clear();
@@ -121,7 +151,7 @@ public class AudioConv {
             process = new ProcessBuilder(command).start();
             if(process.waitFor() != 0){
                 System.out.println(name3 + " neroAacTag Error");
-                return;
+                continue;
             }
 
             if(removeOrig){
@@ -132,7 +162,6 @@ public class AudioConv {
                 process = new ProcessBuilder(command).start();
                 if(process.waitFor() != 0){
                     System.out.println(name + " remove orig Error");
-                    return;
                 }
             }
         }
