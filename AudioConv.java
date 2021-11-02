@@ -1,8 +1,6 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -11,7 +9,7 @@ public class AudioConv {
     private final double q;
     private final boolean removeOrig;
     private final List<String> listFiles;
-    private int n;
+    private final int n;
     private int i = 0;
 
     private void removeFile(String file){
@@ -21,6 +19,16 @@ public class AudioConv {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private boolean wait(Process process) throws IOException, InterruptedException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+        String stdin = in.readLine();
+        while (stdin != null){
+            stdin = in.readLine();
+        }
+        in.close();
+        return process.waitFor() != 0;
     }
 
     public AudioConv(double q, String path, boolean rf){
@@ -73,35 +81,21 @@ public class AudioConv {
                 command.add("-acodec");
                 command.add("mp3float");
             }
-            command.add("-i");
-            command.add(name);
-            command.add("-acodec");
-            command.add("pcm_f32le");
-            command.add(name2);
-            Process process = new ProcessBuilder(command).start();
-            if(process.waitFor() != 0){
+            command.addAll(new ArrayList<>(Arrays.asList("-i", name, "-acodec", "pcm_f32le", name2)));
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            processBuilder.command(command);
+            Process process = processBuilder.start();
+            if(wait(process)){
                 System.out.println(name3 + " to wav Error");
                 removeFile(name2);
                 continue;
             }
 
             command.clear();
-            command.add("sox");
-            command.add(name2);
-            command.add("-e");
-            command.add("floating-point");
-            command.add(name4);
-            command.add("rate");
-            command.add("-v");
-            command.add("-I");
-            command.add("-a");
-            command.add("-b");
-            command.add("99.7");
-            command.add("-p");
-            command.add("100");
-            command.add("48000");
-            process = new ProcessBuilder(command).start();
-            if(process.waitFor() != 0){
+            command.addAll(new ArrayList<>(Arrays.asList("sox", name2, "-e", "floating-point", name4, "rate", "-v", "-I", "-a", "-b", "99.7", "-p", "100", "48000")));
+            processBuilder.command(command);
+            process = processBuilder.start();
+            if(wait(process)){
                 System.out.println(name3 + " sox Error");
                 removeFile(name2);
                 removeFile(name4);
@@ -109,11 +103,10 @@ public class AudioConv {
             }
 
             command.clear();
-            command.add("mv");
-            command.add(name4);
-            command.add(name2);
-            process = new ProcessBuilder(command).start();
-            if(process.waitFor() != 0){
+            command.addAll(new ArrayList<>(Arrays.asList("mv", name4, name2)));
+            processBuilder.command(command);
+            process = processBuilder.start();
+            if(wait(process)){
                 System.out.println(name3 + " mv Error");
                 removeFile(name2);
                 removeFile(name4);
@@ -123,20 +116,15 @@ public class AudioConv {
             command.clear();
             command.add("neroAacEnc");
             if(q > 1){
-                command.add("-2pass");
-                command.add("-br");
-                command.add(String.valueOf(q * 1000));
+                command.addAll(new ArrayList<>(Arrays.asList("-2pass", "-br", String.valueOf(q * 1000))));
             }else{
                 command.add("-q");
                 command.add(String.valueOf(q));
             }
-            command.add("-ignorelength");
-            command.add("-if");
-            command.add(name2);
-            command.add("-of");
-            command.add(name3);
-            process = new ProcessBuilder(command).start();
-            if(process.waitFor() != 0){
+            command.addAll(new ArrayList<>(Arrays.asList("-if", name2, "-of", name3)));
+            processBuilder.command(command);
+            process = processBuilder.start();
+            if(wait(process)){
                 System.out.println(name3 + " to m4a Error");
                 removeFile(name2);
                 removeFile(name3);
@@ -146,19 +134,19 @@ public class AudioConv {
             command.clear();
             command.add("rm");
             command.add(name2);
-            process = new ProcessBuilder(command).start();
-            if(process.waitFor() != 0){
+            processBuilder.command(command);
+            process = processBuilder.start();
+            if(wait(process)){
                 System.out.println(name2 + " rm Error");
                 removeFile(name2);
                 continue;
             }
 
             command.clear();
-            command.add("aacgain");
-            command.add("-e");
-            command.add(name3);
-            process = new ProcessBuilder(command).start();
-            if(process.waitFor() != 0){
+            command.addAll(new ArrayList<>(Arrays.asList("aacgain", "-e", name3)));
+            processBuilder.command(command);
+            process = processBuilder.start();
+            if(wait(process)){
                 System.out.println(name3 + " aacgain Error");
                 removeFile(name3);
                 continue;
@@ -171,20 +159,18 @@ public class AudioConv {
                 command.add("-meta:artist=" + author);
             }
             command.add(name3);
-            process = new ProcessBuilder(command).start();
-            if(process.waitFor() != 0){
+            processBuilder.command(command);
+            process = processBuilder.start();
+            if(wait(process)){
                 System.out.println(name3 + " neroAacTag Error");
                 removeFile(name3);
                 continue;
             }
 
             if(removeOrig){
-                command.clear();
-                command.add("rm");
-                command.add("-f");
-                command.add(name);
-                process = new ProcessBuilder(command).start();
-                if(process.waitFor() != 0){
+                processBuilder.command("rm", "-f", name);
+                process = processBuilder.start();
+                if(wait(process)){
                     System.out.println(name + " remove orig Error");
                 }
             }
@@ -219,6 +205,7 @@ public class AudioConv {
                 try {
                     audioConv.work();
                 } catch (IOException | InterruptedException e) {
+                    System.out.println("Вихід");
                     e.printStackTrace();
                 }
             });
