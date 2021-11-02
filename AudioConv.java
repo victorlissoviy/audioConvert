@@ -75,13 +75,15 @@ public class AudioConv {
             String name4 = ".2" + subName + ".wav";
             String name3 = subName + ".m4a";
             List<String> command = new ArrayList<>();
+
+            //Конвертація в wav
             command.add("ffmpeg");
             command.add("-y");
             if(name.endsWith("mp3")){
                 command.add("-acodec");
                 command.add("mp3float");
             }
-            command.addAll(new ArrayList<>(Arrays.asList("-i", name, "-acodec", "pcm_f32le", name2)));
+            command.addAll(Arrays.asList("-i", name, "-acodec", "pcm_f32le", name2));
             ProcessBuilder processBuilder = new ProcessBuilder();
             processBuilder.command(command);
             Process process = processBuilder.start();
@@ -91,9 +93,8 @@ public class AudioConv {
                 continue;
             }
 
-            command.clear();
-            command.addAll(new ArrayList<>(Arrays.asList("sox", name2, "-e", "floating-point", name4, "rate", "-v", "-I", "-a", "-b", "99.7", "-p", "100", "48000")));
-            processBuilder.command(command);
+            //Ресамплінг до 48000
+            processBuilder.command("sox", name2, "-e", "floating-point", name4, "rate", "-v", "-I", "-a", "-b", "99.7", "-p", "100", "48000");
             process = processBuilder.start();
             if(wait(process)){
                 System.out.println(name3 + " sox Error");
@@ -102,9 +103,7 @@ public class AudioConv {
                 continue;
             }
 
-            command.clear();
-            command.addAll(new ArrayList<>(Arrays.asList("mv", name4, name2)));
-            processBuilder.command(command);
+            processBuilder.command("mv", name4, name2);
             process = processBuilder.start();
             if(wait(process)){
                 System.out.println(name3 + " mv Error");
@@ -113,42 +112,55 @@ public class AudioConv {
                 continue;
             }
 
+            //Конвертація в m4a
             command.clear();
             command.add("neroAacEnc");
             if(q > 1){
-                command.addAll(new ArrayList<>(Arrays.asList("-2pass", "-br", String.valueOf(q * 1000))));
+                command.addAll(Arrays.asList("-2pass", "-br", String.valueOf(q * 1000)));
             }else{
                 command.add("-q");
                 command.add(String.valueOf(q));
             }
-            command.addAll(new ArrayList<>(Arrays.asList("-if", name2, "-of", name3)));
+            command.addAll(Arrays.asList("-if", name2, "-of", name3));
             processBuilder.command(command);
             process = processBuilder.start();
             if(wait(process)){
-                System.out.println(name3 + " to m4a Error");
-                removeFile(name2);
+                System.out.println(name3 + " to m4a Error, try to ogg");
                 removeFile(name3);
-                continue;
-            }
 
-            command.clear();
-            command.add("rm");
-            command.add(name2);
-            processBuilder.command(command);
-            process = processBuilder.start();
-            if(wait(process)){
-                System.out.println(name2 + " rm Error");
+                //Конвертація в ogg
+                String[] quality;
+                String nameogg = subName + ".ogg";
+                double Q;
+                if(q > 1){
+                    Q = q;
+                }else{
+                    Q = q * 10.0;
+                }
+                if(Q > 10){
+                    quality = new String[]{"-b", String.valueOf(Q), "-m", String.valueOf(Q), "-M", String.valueOf(Q)};
+                }else{
+                    quality = new String[]{"-q", String.valueOf(Q)};
+                }
+                command.clear();
+                command.addAll(Arrays.asList("oggenc", "-Q", "--utf8", "--ignorelength", "-t", title));
+                if(!(author == null || author.isEmpty())){
+                    command.addAll(Arrays.asList("-a", author));
+                }
+                command.addAll(Arrays.asList(quality));
+                command.addAll(Arrays.asList("-o", nameogg, name2));
+                processBuilder.command(command);
+                process = processBuilder.start();
+                if(wait(process)){
+                    System.out.println(nameogg + " to ogg Error");
+                    removeFile(nameogg);
+                }
+
+                processBuilder.command("vorbisgain", nameogg);
+                process = processBuilder.start();
+                wait(process);
+
                 removeFile(name2);
-                continue;
-            }
-
-            command.clear();
-            command.addAll(new ArrayList<>(Arrays.asList("aacgain", "-e", name3)));
-            processBuilder.command(command);
-            process = processBuilder.start();
-            if(wait(process)){
-                System.out.println(name3 + " aacgain Error");
-                removeFile(name3);
                 continue;
             }
 
@@ -167,11 +179,29 @@ public class AudioConv {
                 continue;
             }
 
+            processBuilder.command("rm", name2);
+            process = processBuilder.start();
+            if(wait(process)){
+                System.out.println(name2 + " rm Error");
+                removeFile(name2);
+                continue;
+            }
+
+            //знаходження ReplayGain
+            command.clear();
+            command.addAll(Arrays.asList("aacgain", "-e", name3));
+            processBuilder.command(command);
+            process = processBuilder.start();
+            if(wait(process)){
+                System.out.println(name3 + " aacgain Warning");
+            }
+
+            //Видалення оригінального файлу
             if(removeOrig){
                 processBuilder.command("rm", "-f", name);
                 process = processBuilder.start();
                 if(wait(process)){
-                    System.out.println(name + " remove orig Error");
+                    System.out.println(name + " remove orig Warning");
                 }
             }
         }
@@ -205,7 +235,6 @@ public class AudioConv {
                 try {
                     audioConv.work();
                 } catch (IOException | InterruptedException e) {
-                    System.out.println("Вихід");
                     e.printStackTrace();
                 }
             });
