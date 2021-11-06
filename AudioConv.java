@@ -1,3 +1,5 @@
+import com.sun.xml.internal.bind.v2.model.core.EnumConstant;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -5,7 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-enum Format{
+enum Format {
     M4A,
     MP3
 }
@@ -19,7 +21,7 @@ public class AudioConv {
     private final int n;
     private int i = 0;
 
-    private void removeFile(String file){
+    private void removeFile(String file) {
         try {
             Process process = new ProcessBuilder("rm", "-f", file).start();
             process.waitFor();
@@ -154,13 +156,17 @@ public class AudioConv {
         //знаходження ReplayGain
         command.clear();
         command.addAll(Arrays.asList("aacgain", "-q", "-e"));
-        if(replayGain){
+        if (replayGain) {
             command.add("-r");
         }
         command.add(name3);
         processBuilder.command(command);
-        process = processBuilder.start();
-        if (wait(process)) {
+        try {
+            process = processBuilder.start();
+            if (wait(process)) {
+                throw new IOException();
+            }
+        } catch (IOException e) {
             System.out.println(name3 + " aacgain Warning");
         }
     }
@@ -170,17 +176,16 @@ public class AudioConv {
         String name3 = subName + ".mp3";
         List<String> command = new ArrayList<>(Arrays.asList("lame", "-S", "--bitwidth", "32", "-o", "--buffer-constraint", "maximum", "--preset", "extreme"));
         double Q = q;
-        if(Q > 320){
+        if (Q > 320) {
             Q = 320;
         }
-        if(Q <= 10){
+        if (Q <= 10) {
             command.addAll(Arrays.asList("-V", String.valueOf(q), "-q", "0"));
-        }else{
+        } else {
             command.addAll(Arrays.asList("-v", "0", "-q", "0", "-b", String.valueOf(Q), "-B", String.valueOf(Q)));
         }
-        command.add("--tt");
-        command.add(title);
-        if(!(author == null || author.isEmpty())){
+        command.addAll(Arrays.asList("--tt", title));
+        if (!(author == null || author.isEmpty())) {
             command.add("--ta");
             command.add(author);
         }
@@ -188,38 +193,42 @@ public class AudioConv {
         command.add(name3);
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         Process process = processBuilder.start();
-        if(wait(process)){
+        if (wait(process)) {
             throw new Exception(name3 + "to mp3 Error");
         }
 
         command.clear();
         command.addAll(Arrays.asList("mp3gain", "-q", "-e"));
-        if(replayGain){
+        if (replayGain) {
             command.add("-r");
         }
         command.add(name3);
         processBuilder.command(command);
-        process = processBuilder.start();
-        if(wait(process)){
-            throw new Exception(name3 + "mp3gain Error");
+        try {
+            process = processBuilder.start();
+            if (wait(process)) {
+                throw new IOException();
+            }
+        } catch (IOException e) {
+            System.out.println(name3 + " mp3gain Warning");
         }
     }
 
-    public AudioConv(double q, String path, Format format, boolean g, boolean rf){
+    public AudioConv(double q, String path, Format format, boolean g, boolean rf) {
         this.q = q;
         this.format = format;
         replayGain = g;
         removeOrig = rf;
         listFiles = new ArrayList<>();
         System.out.println("Якість: " + this.q);
-        if(format == Format.MP3){
+        if (format == Format.MP3) {
             System.out.println("Формат: mp3");
-        }else if(format == Format.M4A){
+        } else if (format == Format.M4A) {
             System.out.println("Формат: m4a");
         }
         Pattern formats = Pattern.compile("(mp3|ogg|aac|mp4|m4a|wma|opus|oga|flac|wav|aiff|webm|matroska|asf|amr|avi|mov|3gp)$");
-        for(File f : Objects.requireNonNull(new File(path).listFiles())){
-            if(formats.matcher(f.getName().toLowerCase()).find()){
+        for (File f : Objects.requireNonNull(new File(path).listFiles())) {
+            if (formats.matcher(f.getName().toLowerCase()).find()) {
                 listFiles.add(f.getName());
             }
         }
@@ -240,9 +249,9 @@ public class AudioConv {
                     subName = name.substring(0, name.lastIndexOf("."));
                     i += 1;
                     String out = (100 * i / n) + "% (" + i + "/" + n + ") " + subName;
-                    if(format == Format.M4A){
+                    if (format == Format.M4A) {
                         System.out.println(out + ".m4a");
-                    }else if(format == Format.MP3){
+                    } else if (format == Format.MP3) {
                         System.out.println(out + ".mp3");
                     }
                 }
@@ -261,9 +270,9 @@ public class AudioConv {
 
                 toWaw(name, subName);
 
-                if(format == Format.M4A){
+                if (format == Format.M4A) {
                     toM4a(subName, title, author);
-                }else if(format == Format.MP3){
+                } else if (format == Format.MP3) {
                     toMp3(subName, title, author);
                 }
 
@@ -289,23 +298,23 @@ public class AudioConv {
         boolean replayGain = false;
         boolean removeFile = false;
         AudioConv audioConv;
-        try{
-            for(int i = 0; i < args.length; i++){
-                if(args[i].equals("-q") && args[i + 1] != null){
+        try {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i].equals("-q") && args[i + 1] != null) {
                     q = Double.parseDouble(args[i + 1]);
                 }
-                if(args[i].equals("-f") && args[i + 1] != null){
-                    if(args[i + 1].equals("mp3")){
+                if (args[i].equals("-f") && args[i + 1] != null) {
+                    if (args[i + 1].equals("mp3")) {
                         format = Format.MP3;
                     }
                 }
-                if(args[i].equals("-c") && args[i + 1] != null){
+                if (args[i].equals("-c") && args[i + 1] != null) {
                     processors = Integer.parseInt(args[i + 1]);
                 }
-                if(args[i].equals("-r")){
+                if (args[i].equals("-r")) {
                     removeFile = true;
                 }
-                if(args[i].equals("-g")){
+                if (args[i].equals("-g")) {
                     replayGain = true;
                 }
             }
@@ -314,18 +323,18 @@ public class AudioConv {
                     format,
                     replayGain,
                     removeFile);
-        }catch(Exception e){
+        } catch (Exception e) {
             System.out.println(e.getMessage());
             return;
         }
         Thread[] workers = new Thread[processors];
-        for(int i = 0; i < processors; i++){
+        for (int i = 0; i < processors; i++) {
             workers[i] = new Thread(audioConv::work);
         }
-        for(Thread worker : workers){
+        for (Thread worker : workers) {
             worker.start();
         }
-        for(Thread worker : workers){
+        for (Thread worker : workers) {
             worker.join();
         }
     }
