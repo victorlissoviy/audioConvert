@@ -227,7 +227,7 @@ public class AudioConv {
         } else if (format == Format.M4A) {
             System.out.println("Формат: m4a");
         }
-        Pattern formats = Pattern.compile("(mp3|ogg|aac|mp4|m4a|wma|opus|oga|flac|wav|aiff|webm|matroska|asf|amr|avi|mov|3gp)$");
+        Pattern formats = Pattern.compile(".(mp3|ogg|aac|mp4|m4a|wma|opus|oga|flac|wav|aiff|webm|matroska|asf|amr|avi|mov|3gp)$");
         for (File f : Objects.requireNonNull(new File(path).listFiles())) {
             if (formats.matcher(f.getName().toLowerCase()).find()) {
                 listFiles.add(f.getName());
@@ -238,8 +238,8 @@ public class AudioConv {
 
     public void work() {
         while (true) {
+            String subName = null;
             try {
-                String subName;
                 String name;
                 synchronized (this) {
                     if (!listFiles.isEmpty()) {
@@ -277,8 +277,6 @@ public class AudioConv {
                     toMp3(subName, title, author);
                 }
 
-                removeFile("." + subName + ".wav");
-
                 //Видалення оригінального файлу
                 if (removeOrig) {
                     Process process = new ProcessBuilder().command("rm", "-f", name).start();
@@ -288,6 +286,10 @@ public class AudioConv {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                if(!(subName == null || subName.isEmpty())){
+                    removeFile("." + subName + ".wav");
+                }
             }
         }
     }
