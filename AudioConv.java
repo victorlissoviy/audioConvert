@@ -8,11 +8,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-enum Format {
-    M4A,
-    MP3
-}
-
 public class AudioConv {
     private final double q;
     private final boolean removeOrig;
@@ -319,6 +314,19 @@ public class AudioConv {
                 }
                 if (args[i].equals("-g")) {
                     replayGain = true;
+                }
+                if(args[i].equals("-h")){
+                    System.out.println("AudioConvert\n" +
+                                       "Для роботи програми потрібно щоб було встановлено наступні програми:\n" +
+                                       "ffmpeg neroAacEnc aacgain neroAacTag sox oggenc vorbisgain lame mp3gain\n" +
+                                       "\n" +
+                                       "Параметри:\n" +
+                                       "\t-q <num> - Якість\n" +
+                                       "\t-f (mp3,m4a) - формат\n" +
+                                       "\t-c - кількість потоків\n" +
+                                       "\t-r - видалення оригінального файлу\n" +
+                                       "\t-g - встановлення гучності вихідного файлу по ReplayGain");
+                    return;
                 }
             }
             audioConv = new AudioConv(q,
