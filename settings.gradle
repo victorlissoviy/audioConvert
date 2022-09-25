@@ -8,4 +8,4 @@
  */
 
 rootProject.name = 'audioConv'
-include('app')
+include('audioConvert')

@@ -2,6 +2,5 @@ package audioconvert.enums;
 
 public enum Format {
     M4A,
-    MP3,
-    OGG
+    MP3
 }
