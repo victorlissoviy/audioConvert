@@ -51,7 +51,7 @@ public class ConverterM4A extends Converter {
 
     //знаходження ReplayGain
     command.clear();
-    command.addAll(Arrays.asList("aacgain", "-q", "-e"));
+    command.addAll(Arrays.asList("aacgain", "-q", "-e", "-s", "r"));
     command.add(newName);
     processBuilder.command(command);
     try {

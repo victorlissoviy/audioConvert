@@ -29,14 +29,13 @@ public class ConverterFactory {
   }
 
   public Converter getConverter(String name) {
+    Converter converter = null;
+
     switch (format) {
-      case M4A -> {
-        return new ConverterM4A(name, quality, removeOriginalFile);
-      }
-      case MP3 -> {
-        return new ConverterMP3(name, quality, removeOriginalFile);
-      }
+      case M4A -> converter = new ConverterM4A(name, quality, removeOriginalFile);
+      case MP3 -> converter = new ConverterMP3(name, quality, removeOriginalFile);
     }
-    return null;
+
+    return converter;
   }
 }

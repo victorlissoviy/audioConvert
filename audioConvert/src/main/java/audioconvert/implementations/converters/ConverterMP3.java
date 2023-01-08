@@ -41,7 +41,7 @@ public class ConverterMP3 extends Converter {
     }
 
     command.clear();
-    command.addAll(Arrays.asList("mp3gain", "-q", "-e"));
+    command.addAll(Arrays.asList("mp3gain", "-q", "-e", "-s", "r", "-s", "i"));
     command.add(newName);
     processBuilder.command(command);
     try {

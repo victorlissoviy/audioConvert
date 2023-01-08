@@ -52,7 +52,9 @@ public abstract class Converter {
     this.removeOrig = removeOrig;
     tmpName1 = "/tmp/." + subName + ".wav";
     tmpName2 = "/tmp/.2" + subName + ".wav";
+  }
 
+  private void smartQuality() {
     String nameLowerCase = name.toLowerCase();
     if (nameLowerCase.endsWith(".mp3")) {
       getInfoFromMp3();
