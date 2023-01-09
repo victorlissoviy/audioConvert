@@ -13,11 +13,15 @@ public class ConverterM4A extends Converter {
   public ConverterM4A(String name, double quality, boolean removeOrig) {
     super(name, quality, removeOrig);
     format = "m4a";
+    if (author == null) {
+      newName = "%s.m4a".formatted(title);
+    } else {
+      newName = "%s - %s.m4a".formatted(author, title);
+    }
   }
 
   @Override
   protected void toFormat() throws IOException {
-    newName = "%s - %s.m4a".formatted(author, title);
     List<String> command = new ArrayList<>();
     command.add("neroAacEnc");
     if (quality > 1) {

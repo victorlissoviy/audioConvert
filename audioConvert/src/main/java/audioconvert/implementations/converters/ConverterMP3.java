@@ -12,11 +12,15 @@ public class ConverterMP3 extends Converter {
   public ConverterMP3(String name, double quality, boolean removeOrig) {
     super(name, 10 - quality * 10, removeOrig);
     format = "mp3";
+    if (author == null) {
+      newName = "%s.mp3".formatted(title);
+    } else {
+      newName = "%s - %s.mp3".formatted(author, title);
+    }
   }
 
   @Override
   protected void toFormat() throws IOException {
-    newName = "%s - %s.mp3".formatted(author, title);
     List<String> command = new ArrayList<>(Arrays.asList("lame", "-S", "--bitwidth", "32", "-o", "--buffer-constraint", "maximum", "--preset", "extreme", "-m", "j"));
     double Q = quality;
     if (Q > 320) {

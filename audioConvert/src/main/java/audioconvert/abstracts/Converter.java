@@ -212,7 +212,7 @@ public abstract class Converter {
   }
 
   public String getInfo() {
-    return "%s -> %s - %s.%s".formatted(name, author, title, format);
+    return "%s -> %s".formatted(name, newName);
   }
 
   protected abstract void toFormat() throws IOException;
